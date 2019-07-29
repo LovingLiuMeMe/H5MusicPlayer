@@ -220,6 +220,7 @@ audio{
   z-index: 1;
 }
 .music_item_name{
+  display: none;
   list-style: none;
   width: 100px;
   position: absolute;

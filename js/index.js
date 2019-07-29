@@ -65,8 +65,8 @@
     },{
       title:'演员',
       author:'薛之谦',
-      img_addr:'static/images/于文文.jpeg',
-      audio_addr:'static/song/体面.mp3',
+      img_addr:'static/images/薛之谦.jpeg',
+      audio_addr:'static/song/演员.mp3',
       content:"[00:00.00]薛之谦 - 演员"+
       "[00:04.00]词：薛之谦"+
       "[00:07.00]曲：薛之谦"+
@@ -142,6 +142,18 @@
   var next_btn = document.getElementsByClassName('next')[0];
   var play_btn = document.getElementsByClassName('play')[0];
   var lyric_container = document.getElementsByClassName('lyric_container')[0];
+  var container = document.getElementsByClassName('container')[0];
+  var song_list = document.getElementsByClassName('list')[0];
+
+  function change_music(){
+    if(nowSongIndex > lyric_info_list.length-1){
+      nowSongIndex = 0;
+    }
+    if(nowSongIndex < 0 ){
+      nowSongIndex = lyric_info_list.length-1;
+    }
+    init();
+  }
 
   function format(time){
     var result = "";
@@ -151,7 +163,7 @@
       m = "0"+m;
     }
     if(s < 10){
-      s = "0"+m
+      s = "0"+s
     }
     return m+":"+s
   }
@@ -189,22 +201,26 @@
   function init(){
     // 初始化
     // 总时间计算
-    duration = audioNode.duration;
-    allTime.innerText = format(duration);
-    // 歌手图片
-    singerBg.style.backgroundImage="url('"+lyric_info_list[nowSongIndex].img_addr+"')";
     // 歌曲
     audioNode.src = lyric_info_list[nowSongIndex].audio_addr;
-    // 音量
-    audioNode.volume = 0.5;
-    // 歌曲列表设置
-    var lis = "";
-    lyric_info_list.map((v,i)=>{
-      lis += "<li>"+v.title+"</li>"
-    }) 
-    list.innerHTML = lis;
-    // 歌词设置
-    lyric_init();
+    audioNode.oncanplay = function(){
+      duration = audioNode.duration;
+      allTime.innerText = format(duration);
+      // 歌手图片
+      singerBg.style.backgroundImage="url('"+lyric_info_list[nowSongIndex].img_addr+"')";
+      // 音量
+      audioNode.volume = 0.5;
+      // 歌曲列表设置
+      var lis = "";
+      lyric_info_list.map((v,i)=>{
+        lis += "<li>"+v.title+"</li>"
+      }) 
+      list.innerHTML = lis;
+      // 歌词设置
+      lyric_init();
+      audioNode.play();
+    }
+
   }
   init();
   function lyric_init(){
@@ -229,10 +245,69 @@
     })
     lyric_view.innerHTML = p;
   }
-  audioNode.addEventListener('timeupdate',function(){
+  // 按钮点击事件
+  audio_progress_btn.onmousedown = function(e){
+    // 按钮点击
+    var ev = e || window.event;
+    var startX = ev.clientX - this.offsetLeft;
+    document.onmousemove = function(e2){
+      var ev2 = e2 || window.event;
+      var nowX = ev2.clientX - startX;
+      if(nowX<0){
+        nowX = 0;
+      }else if(nowX>all_audio_progress.offsetWidth){
+        nowX = all_audio_progress.offsetWidth;
+      }
+      audio_progress_btn.style.left = nowX + 'px';
+      now_video_progress.style.offsetWidth = nowX + 'px';
+      audio_playtime(nowX);
+    }
+    document.onmouseup = function(){
+      this.onmousemove = null;
+      this.onmouseup = null;
+    }
+  }
+  all_audio_progress.onclick = function(e){
+    // 进度条点击
+    var ev = e || window.event;
+    var startX = ev.clientX - (container.offsetLeft+this.offsetLeft);
+    audio_playtime(startX);
+  }
+  // 根据px改变视频播放进度
+  function audio_playtime(cg){
+    var cg_time = parseInt(cg / all_audio_progress.offsetWidth * duration);
+    audioNode.currentTime = cg_time;
     play_run();
+  }
+  audioNode.addEventListener('timeupdate',function(){
+      play_run();
   })
   play_btn.onclick = function(){
-    audioNode.play();
+    var i = play_btn.getElementsByTagName('i')[0];
+    if(i.classList.contains('icon-bofang')){
+      //目前状态为播放
+      i.classList.remove('icon-bofang');
+      i.classList.add('icon-zanting');
+      audioNode.pause();
+    }else {
+      //目前状态为暂停
+      i.classList.remove('icon-zanting');
+      i.classList.add('icon-bofang');
+      audioNode.play();
+    }
+  }
+
+  song_list.onclick = function(){
+    if(list.style.display == 'none'){
+      list.style.display = 'block';
+    }else{
+      list.style.display = 'none';
+    }
+  }
+  
+  // 歌曲转换
+  next_btn.onclick = function(){
+    nowSongIndex++;
+    change_music();
   }
 })()
